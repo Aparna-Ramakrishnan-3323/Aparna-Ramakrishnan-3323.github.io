@@ -1,1 +1,2 @@
-# Aparna-Ramakrishnan-3323.github.io
+# class-1
+ Intro to Three.js- Camer, Lights, Mesh, Geometry
