@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Introduction to Three.js</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+			
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.js"></script>
+		<script src="vendor/three.js/Detector.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/three-trackballcontrols-web@0.0.2/dist/three-trackballcontrols.js"></script>
+
+		<script src="vendor/threex/THREEx.FullScreen.js"></script>
+		<script src="vendor/threex/THREEx.WindowResize.js"></script>
+		<script src="vendor/threex.dragpancontrols.js"></script>
+
+		<link  href="css/main.css" rel="stylesheet"/>
+	</head>
+<body>
+	<!-- three.js container -->
+    	<div id="container"></div>
+	<!-- info on screen display -->
+
+	<script type="text/javascript">
+		var stats, scene, renderer;
+		var camera, cameraControl;
+
+
+		if( !init() )	animate();
+
+		// init the scene
+		function init(){
+			renderer = new THREE.WebGLRenderer({
+				alpha: true, antialias: true,	// to get smoother output
+			});
+
+			// renderer.setClearColor( 0xBBBBBB, 1 );
+
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.getElementById('container').appendChild(renderer.domElement);
+
+			// create a scene
+			scene = new THREE.Scene();
+
+			// put a camera in the scene
+			camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.set(0, -5, 40);
+			scene.add(camera);
+
+			renderer.setClearColor (0, 1);
+			
+			cameraControls	= new TrackballControls( camera )
+
+			// transparently support window resize (press `f`)
+			THREEx.WindowResize.bind(renderer, camera);
+			THREEx.FullScreen.bindKey();		
+
+			// Add lights to the scene
+			var light	= new THREE.AmbientLight( Math.random() * 0xff00ff );
+			scene.add( light );
+
+			var light	= new THREE.DirectionalLight( Math.random() * 0xffffff );
+			light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
+			scene.add( light );
+
+			var light	= new THREE.DirectionalLight( Math.random() * 0xffffff );
+			light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
+			scene.add(light);
+
+			// here you add your objects
+			// - you will most likely replace this part by your own
+			
+			var geometry, material, mesh;
+
+			
+			
+			// Cube -2			
+			geometry = new THREE.CubeGeometry( 0.35, 0.35, 0.35 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(-2.55, 0, -7);
+			scene.add( mesh );
+
+			// Cube -1			
+			geometry = new THREE.CubeGeometry( 0.5, 0.5, 0.5 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(-3, 0, -6);
+			scene.add( mesh );
+
+			//Ring
+			var geometry = new THREE.RingGeometry( 3, 5, 50 );
+			var material = new THREE.MeshPhongMaterial( { color: 0xf000ff, side: THREE.DoubleSide } );
+			var mesh = new THREE.Mesh( geometry, material );
+			mesh.position.set(-2.45, 0, -8);
+			scene.add( mesh );
+
+
+			// Cube 0			
+			geometry = new THREE.CubeGeometry( 0.75, 0.75, 0.75 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(-1.5, 0, -5);
+			scene.add( mesh );
+
+			// Cube 1
+			geometry = new THREE.CubeGeometry( 1, 1, 1 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(0, 0, -4);
+			scene.add( mesh );
+
+			//Cube 2
+			geometry = new THREE.CubeGeometry( 1.5, 1.5, 1.5 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(1.5, -0.5, -4);
+			scene.add( mesh );
+
+			//Cube 3			
+			geometry = new THREE.CubeGeometry( 2, 2, 2);
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(3, -1.75, -2);
+			scene.add( mesh );
+
+			//Cube 4
+			geometry = new THREE.CubeGeometry( 2.5, 2.5, 2.5 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(1, -3.5, 0);
+			scene.add( mesh );
+
+			//Cube 5
+			geometry = new THREE.CubeGeometry( 2.75, 2.75, 2.75 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(-2, -5, 2);
+			scene.add( mesh );
+
+			//Cube 6
+			geometry = new THREE.CubeGeometry( 3, 3, 3 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(-5, -7, 3);
+			// Add mesh to the scene
+			scene.add( mesh );
+
+			//Cube 7
+			geometry = new THREE.CubeGeometry( 3.25, 3.25, 3.25 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(-6.5, -7.5, 9);
+			// Add mesh to the scene
+			scene.add( mesh );
+
+			//Cube 8
+			geometry = new THREE.CubeGeometry( 3.5, 3.5, 3.5 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(-4, -9, 14);
+			// Add mesh to the scene
+			scene.add( mesh );
+
+			//Cube 9
+			geometry = new THREE.CubeGeometry( 4, 4, 4 );
+			material = new THREE.MeshNormalMaterial();
+			mesh	= new THREE.Mesh( geometry, material );
+			mesh.position.set(1.75, -9.5, 16);
+			// Add mesh to the scene
+			scene.add( mesh );
+
+
+			material.flatShading = true;
+
+
+		}
+
+		// animation loop
+		function animate() {
+			requestAnimationFrame( animate );
+
+			// do the render
+			render();
+		}
+
+		// render the scene
+		function render() {
+			// variable which is increase by Math.PI every seconds - usefull for animation
+			var time	= Date.now() * Math.PI;
+
+			// update camera controls
+			cameraControls.update();
+
+			// actually render the scene
+			renderer.render( scene, camera );
+
+			// animation of all objects
+			scene.traverse(function(object3d, i){
+				if( object3d instanceof THREE.Mesh === false )	return
+				
+				//object3d.rotation.z = time * 0.0003 * (i % 2 ? 1 : -1);
+				object3d.rotation.z = time * 0.0003  ;
+				//object3d.rotation.x = time * 0.0002 * (i % 2 ? 1 : -1);
+
+						
+				
+			})
+		}
+	</script>
+</body>
+</html>
