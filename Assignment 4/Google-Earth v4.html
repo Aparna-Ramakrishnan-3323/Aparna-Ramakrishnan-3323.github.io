@@ -59,7 +59,7 @@
 
 		<div id="container"></div>
 		<div id="info"><font color='white'>
-			<p class="top">Press 1 and 2 to toggle between scenes and to see the moon.
+			<p class="top">Press 1 to see moon and 2 to hide it.
 						</font></p>
 						
         </div>
@@ -182,7 +182,7 @@
 				
 				//buttons
 				//door to nyc
-				var doorgeometry=new THREE.PlaneGeometry(0.4,0.2,2);
+				var doorgeometry=new THREE.PlaneGeometry(0.4,0.18,2);
 				var doortexture = new THREE.TextureLoader().load('\Door.jpg');
 				var doormaterial=new THREE.MeshBasicMaterial({map: doortexture, side: THREE.DoubleSide});
 				var door=new THREE.Mesh(doorgeometry,doormaterial);
@@ -219,13 +219,13 @@
 
 				//back button
 				var backgeometry=new THREE.PlaneGeometry(0.4,0.2,2);
-				backgeometry.scale(-20,5,20);
+				//backgeometry.scale(-10,2,10);
 				var backtexture = new THREE.TextureLoader().load('\Back.jpg');
 				var backmaterial=new THREE.MeshBasicMaterial({map: backtexture, side: THREE.DoubleSide});
 				var back=new THREE.Mesh(backgeometry,backmaterial);
-				back.position.z=-10;
-				back.position.y=-20;
-				back.position.x=-20;
+				back.position.z=-1;
+				back.position.y=1.25;
+				back.position.x=2;
 				back.name='back';
 				scene2.add(back);
 			}
@@ -297,7 +297,7 @@
 					if( object3d instanceof THREE.Mesh === false )	return
 					
 					
-					if(stoprotation===false && object3d.name!=='door')
+					if(stoprotation===false && object3d.name!=='door'&& object3d.name!=='back')
 					//object3d.rotation.z = time * 0.0003 * (i % 2 ? 1 : -1);
 					{object3d.rotation.y = time * 0.00003  ;}
 
@@ -310,6 +310,11 @@
 						if(object3d.name==='door')
 						{
 							scene=scene2;
+						}
+
+						if(object3d.name==='back')
+						{
+							scene=scene1;
 						}
 						//if(object3d === moon) {
 						//	// show the Moon
@@ -357,14 +362,10 @@
 			document.onkeypress = function(e) {
 			if(e.keyCode === 49) {
 				moon.visible=true;
-				camera=camera1;
-				scene=scene1;
 			}
 
 			if(e.keyCode === 50) {
-				//moon.visible=false;
-				camera=scene2camera;
-				scene=scene2;
+				moon.visible=false;
 			}
 		}
 			
