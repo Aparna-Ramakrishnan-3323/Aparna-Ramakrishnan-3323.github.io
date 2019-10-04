@@ -1,0 +1,376 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Introduction to Three.js - Viewing Panoramas</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+			
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/three-trackballcontrols-web@0.0.2/dist/three-trackballcontrols.js"></script>
+		<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+		<!-- load fonts -->
+		<script src="fonts/gentilis_bold.typeface.js"></script>
+		<script src="fonts/gentilis_regular.typeface.js"></script>
+		<script src="fonts/optimer_bold.typeface.js"></script>
+		<script src="fonts/optimer_regular.typeface.js"></script>
+		<script src="fonts/helvetiker_bold.typeface.js"></script>
+		<script src="fonts/helvetiker_regular.typeface.js"></script>
+		<script src="fonts/droid_sans_regular.typeface.js"></script>
+		<script src="fonts/droid_sans_bold.typeface.js"></script>
+		<script src="fonts/droid_serif_regular.typeface.js"></script>
+		<script src="fonts/droid_serif_bold.typeface.js"></script>
+
+		<style>
+			body {
+				overflow	: hidden;
+				padding		: 0;
+				margin		: 0;
+
+				color		: #222;
+				background: linear-gradient(to bottom,  #EEE 0%,#CCC 100%);
+				font-family	: monospace;
+				font-size	: 100%;
+			}
+			#info .top {
+				position	: absolute;
+				top		: 0px;
+				width		: 100%;
+				padding		: 5px;
+				text-align	: center;
+			}
+			#info a {
+				color		: #66F;
+				text-decoration	: none;
+			}
+			#info a:hover {
+				text-decoration	: underline;
+			}
+			#info .bottom {
+				position	: absolute;
+				bottom		: 0px;
+				right		: 5px;
+				padding		: 5px;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info"><font color='white'>
+			<p class="top">Press 1 and 2 to toggle between scenes and to see the moon.
+						</font></p>
+						
+        </div>
+		
+
+        <script type="text/javascript">
+			var stats, camera, scene, renderer, material, shouldRaycast;
+			var earth,moon,starField;
+
+			var cameraTarget = new THREE.Vector3(0,0,0);
+			var raycaster = new THREE.Raycaster();
+			var mouse = new THREE.Vector2();
+			var cameraControl, stoprotation=false;
+			
+			//moon orbit variables
+			var r = 0.75, moon;
+			var theta = 0;
+			var dTheta = 2 * Math.PI / 1000;
+
+			//location
+			var clickedpoint,clickedpointdistance, center=0;
+
+			//multiple scenes
+			var scene1, scene2, zoom=0.45, inc=-0.01;
+
+            //  Initialize and begin updating the scene
+			init();
+			animate();
+
+			function init() {
+				var container, earth;
+				
+				//Welcome to Space Station
+				var audio = new Audio('\Earth voice1.mp3');
+				audio.play();
+				
+				//raycasting
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+
+				container = document.getElementById('container');
+				container.appendChild(renderer.domElement);
+
+				//Scene
+				scene = new THREE.Scene();
+				scene1=new THREE.Scene();
+				scene2 = new THREE.Scene();
+				scene=scene1;
+
+				// Resize canvas when the screen resizes
+				document.addEventListener('resize', function() {
+					camera.aspect = width / height;
+					camera.updateProjectionMatrix();
+					renderer.setSize(width, height);
+				}, false);
+
+				//scene1 Camera
+				camera1 = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000);
+				camera1.position.z = 2.5;
+				camera1.lookAt(cameraTarget);
+				camera=camera1;
+				scene1.add(camera);
+
+
+				//OrbitControls
+				cameraControls	= new THREE.OrbitControls( camera, renderer.domElement );
+				//cameraControls.enableDamping=true;
+				//cameraControls.dampingFactor=2;
+				cameraControls.enableZoom=false;
+				//cameraControls.zoomSpeed=10;
+				
+				//lights
+				scene1.add(new THREE.AmbientLight(0x333333));
+								
+				var light = new THREE.DirectionalLight(0xffffff, 1);
+				light.position.set(5, 3, 5);
+				scene1.add(light);
+
+				var light2	= new THREE.DirectionalLight(0xffffff );
+				light2.position.set( Math.random(), Math.random(), Math.random() ).normalize().multiplyScalar(3);
+				light2.lookAt(cameraTarget); // Tell the camera to aim at our cameraTarget
+				scene1.add( light2 );
+
+
+				//Mesh
+
+				//Earth
+				var earthgeometry = new THREE.SphereBufferGeometry(0.5, 32, 32);
+				var texture = new THREE.TextureLoader().load('https://blog.playcanvas.com/wp-content/uploads/2016/10/Earth-Color4096.jpg');
+				earthmaterial = new THREE.MeshPhongMaterial({ map: texture});//u,v mapping
+				earth = new THREE.Mesh(earthgeometry, earthmaterial);
+				scene1.add(earth);
+
+				//Starfield
+				var starGeometry = new THREE.SphereGeometry(10, 50, 50);
+				var texture = new THREE.TextureLoader().load('http://cdn.eso.org/images/screen/eso0932a.jpg');
+				//var texture=new THREE.TextureLoader().load('https://miro.medium.com/max/3464/1*znkS2S424qRj3OqPq1fPtA.png');
+				var starMaterial = new THREE.MeshPhongMaterial({
+				  map: texture,
+				  side: THREE.DoubleSide,
+				  shininess: 0
+				});
+				starField = new THREE.Mesh(starGeometry, starMaterial);
+				starField.name='stars';
+				scene1.add(starField);
+
+				
+				//Moon 
+				var moonGeometry = new THREE.SphereGeometry(0.15, 32,32);
+				var texture = new THREE.TextureLoader().load('https://coryg89.github.io/assets/themes/img/moon1024x512.jpg')
+				var moonMaterial = new THREE.MeshPhongMaterial({
+				//var moonMaterial = new THREE.MeshPhongMaterial({color: Math.random() * 0xffffff});
+				  map: texture
+				});
+				moon = new THREE.Mesh(moonGeometry, moonMaterial);
+				moon.position.x=1;
+				moon.visible=false;
+				scene1.add(moon);
+				
+				//buttons
+				//door to nyc
+				var doorgeometry=new THREE.PlaneGeometry(0.4,0.2,2);
+				var doortexture = new THREE.TextureLoader().load('\Door.jpg');
+				var doormaterial=new THREE.MeshBasicMaterial({map: doortexture, side: THREE.DoubleSide});
+				var door=new THREE.Mesh(doorgeometry,doormaterial);
+				door.position.x=1.5;
+				door.position.y=0.9;
+				door.name='door';
+				scene1.add(door);
+
+				//stop rotation
+
+				//start rotation
+
+
+				//scene2
+				scene2camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 11000 );
+				scene2camera.target = new THREE.Vector3( 0, 0, 0 );
+				scene2.add(scene2camera);
+				scene2.add(new THREE.AmbientLight(0x333333));
+
+				var light	= new THREE.DirectionalLight( Math.random() * 0xffffff );
+					light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
+					scene2.add(light);
+				
+				var nygeometry = new THREE.SphereBufferGeometry( 30, 60, 40 );
+				nygeometry.scale( -20, 5,20 );
+				//var nytexture = new THREE.TextureLoader().load( 'https://live.staticflickr.com/4152/5063990424_6560387abf_b.jpg' );
+				//var nytexture = new THREE.TextureLoader().load( 'https://www.youvisit.com/media/91654/panoramas/207030/2048.jpg' );
+				var nytexture = new THREE.TextureLoader().load( 'https://cloudflare1.360gigapixels.com/pano/patrick-grube/00008225_Empire_State_Building.jpg/equirect_crop_3_1/6.jpg' );
+				nymaterial = new THREE.MeshBasicMaterial( { map: nytexture } );
+				nymesh = new THREE.Mesh( nygeometry, nymaterial );
+				nymesh._skybox = true;
+				//nymesh.name='door';
+				scene2.add( nymesh );
+
+				//back button
+				var backgeometry=new THREE.PlaneGeometry(0.4,0.2,2);
+				backgeometry.scale(-20,5,20);
+				var backtexture = new THREE.TextureLoader().load('\Back.jpg');
+				var backmaterial=new THREE.MeshBasicMaterial({map: backtexture, side: THREE.DoubleSide});
+				var back=new THREE.Mesh(backgeometry,backmaterial);
+				back.position.z=-10;
+				back.position.y=-20;
+				back.position.x=-20;
+				back.name='back';
+				scene2.add(back);
+			}
+            
+			function animate() {
+				requestAnimationFrame(animate);
+				render();
+			}
+						
+			function render() {
+
+			/* Raycasting */
+            	
+				var hits = []
+				if(shouldRaycast) { // check if mouse is pressed
+				    
+				    raycaster.setFromCamera(mouse, camera);
+					
+				    var intersections = raycaster.intersectObjects(scene.children);
+									
+						//log clicked point	
+						clickedpoint= intersections[0].point;
+						clickedpointdistance=intersections[0].distance;
+						console.log(clickedpoint);
+						console.log(clickedpointdistance);
+						
+
+						//if(clickedpointdistance>2 && clickedpointdistance<5.0)
+						//{
+						//	zoom=0.2;
+						//	//camera.fov *= zoom;
+						//	cameraControls.zoomSpeed=60;
+						//	cameraControls.enableZoom=true
+						//	camera.updateProjectionMatrix();
+						//	zoom += inc;
+						//	if ( zoom <= 0.02 || zoom >= .01 ){
+						//	inc = -inc;
+						//	 }
+						//	stoprotation=true;
+						//	//shouldRaycast=false;
+						//}
+						
+				
+				    // Map intersected meshes to the hits array
+				    hits = intersections.map(intersection => intersection.object);
+				}
+
+
+				// variable which is increase by Math.PI every seconds - usefull for animation
+				var time	= Date.now() * Math.PI;
+
+				// update camera controls
+				cameraControls.update();
+
+				//Increment theta, and update moon x and y
+				//position based off new theta value        
+				theta += dTheta;
+				moon.position.x = r * Math.cos(theta);
+				moon.position.z = r * Math.sin(theta);
+
+				// actually render the scene
+				renderer.render( scene, camera );
+
+
+				
+
+				// animation of all objects
+				scene.traverse(function(object3d, i){
+					if( object3d instanceof THREE.Mesh === false )	return
+					
+					
+					if(stoprotation===false && object3d.name!=='door')
+					//object3d.rotation.z = time * 0.0003 * (i % 2 ? 1 : -1);
+					{object3d.rotation.y = time * 0.00003  ;}
+
+					
+					
+					// Check if current mesh is hit by the raycast
+				    if(hits.includes(object3d)&&(object3d.name!=='stars')) {
+ 				        object3d.scale.set(1.2,1.2,1.2)
+						
+						if(object3d.name==='door')
+						{
+							scene=scene2;
+						}
+						//if(object3d === moon) {
+						//	// show the Moon
+						//}
+					}
+				    else 
+				        object3d.scale.set(1,1,1);
+						
+					
+					})
+					
+						///Zoom
+						//unction onmousewheelchange(e) {
+						//	if(e.wheeldelta>0)
+						//	 {
+						//	 camera.position.z -= 100;
+						//	 }
+						//	 else
+						//	 {
+						//	 camera.position.z += 100;
+						//
+						//}
+					
+
+			}
+			
+			
+
+			window.addEventListener('pointermove', function (event) {
+			    // calculate mouse position in normalized device coordinates
+			    // (-1 to +1) for both components
+			    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+			    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+			})
+
+			window.addEventListener('pointerdown', function (event) {
+			    shouldRaycast = true;
+				
+			})
+
+			window.addEventListener('pointerup', function (event) {
+			    shouldRaycast = false;
+				
+			})
+			document.onkeypress = function(e) {
+			if(e.keyCode === 49) {
+				moon.visible=true;
+				camera=camera1;
+				scene=scene1;
+			}
+
+			if(e.keyCode === 50) {
+				//moon.visible=false;
+				camera=scene2camera;
+				scene=scene2;
+			}
+		}
+			
+			
+
+		</script>
+		
+	</body>
+</html>
