@@ -1,0 +1,240 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Introduction to Three.js - Viewing Panoramas</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+			
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/three-trackballcontrols-web@0.0.2/dist/three-trackballcontrols.js"></script>
+
+		<style>
+			body {
+				overflow	: hidden;
+				padding		: 0;
+				margin		: 0;
+
+				color		: #222;
+				background: linear-gradient(to bottom,  #EEE 0%,#CCC 100%);
+				font-family	: monospace;
+				font-size	: 100%;
+			}
+			#info .top {
+				position	: absolute;
+				top		: 0px;
+				width		: 100%;
+				padding		: 5px;
+				text-align	: center;
+			}
+			#info a {
+				color		: #66F;
+				text-decoration	: none;
+			}
+			#info a:hover {
+				text-decoration	: underline;
+			}
+			#info .bottom {
+				position	: absolute;
+				bottom		: 0px;
+				right		: 5px;
+				padding		: 5px;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info">
+			Google Earth demo.<br />
+            Drag an image into the page.
+        </div>
+
+        <script type="text/javascript">
+			var camera, scene, renderer, material;
+
+			//var isUserInteracting = true,
+			//	onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+			//	lon = 0, onMouseDownLon = 0,
+			//	lat = 0, onMouseDownLat = 0,
+			//	phi = 0, theta = 0;
+
+
+            //  Initialize and begin updating the scene
+			init();
+			animate();
+
+			function init() {
+				var container, mesh;
+
+				/* Create a WebGL renderer and append it's canvas to the DOM */
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+
+				container = document.getElementById('container');
+				container.appendChild(renderer.domElement);
+
+				/* Create a perspective camera and point it at 0,0,0 */
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000);
+				//camera.target = new THREE.Vector3(0, 0, 0);
+				camera.position.z = 1.5;
+
+				/* Create the root scene */
+				scene = new THREE.Scene();
+
+
+
+				// Create a sphere buffer
+				// Buffer geometries are more efficient to render but tend to be harder to manipulate
+				// As a rule of thumb, if you're deforming or interacting with a mesh, you should use a geometry
+				// If all you want is to render a simple shape, use a buffer geometry
+				var geometry = new THREE.SphereBufferGeometry(0.5, 32, 32);
+
+				scene.add(new THREE.AmbientLight(0x333333));
+
+				//var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
+				//light.position.set(Math.random(), Math.random(), Math.random()).normalize();
+				//scene.add(light);
+				var light = new THREE.DirectionalLight(0xffffff, 1);
+				light.position.set(5, 3, 5);
+				scene.add(light);
+
+				// invert the geometry on the x-axis so that all of the faces point inward
+				// This allows us to project the panoramic image on the sphere and view it from the inside
+				// We'll make this sphere huge so we can put stuff inside
+				//geometry.scale(50, 20, 20);
+
+				// Load an initial equirectangular texture
+				// Textures are image data loaded into memory and associated with a material
+				// We can use textures to do anything from render realistic details, to decals and skyboxes (like this one)
+				var texture = new THREE.TextureLoader().load('https://blog.playcanvas.com/wp-content/uploads/2016/10/Earth-Color4096.jpg');
+				material = new THREE.MeshPhongMaterial({ map: texture});//u,v mapping
+
+				// Combine the material and the geometry into a mesh
+				mesh = new THREE.Mesh(geometry, material);
+				scene.add(mesh);
+
+				new THREE.Mesh(
+					new THREE.SphereGeometry(90, 64, 64),
+					new THREE.MeshBasicMaterial({
+						map: THREE.ImageUtils.loadTexture('https://ak6.picdn.net/shutterstock/videos/17088916/thumb/1.jpg'),
+						side: THREE.BackSide
+					})
+				);
+
+				
+				render();
+
+			}
+            
+            // Begin animation loop
+			//function animate() {
+			//	requestAnimationFrame(animate);
+				
+			//	render();
+			//}
+
+			function render() {
+                // If there's no interaction update camera rotation
+				//var controls = new THREE.TrackballControls(camera);
+				//controls.update();
+				//mesh.rotation.y += 0.0005;
+				//clouds.rotation.y += 0.0005;
+				requestAnimationFrame(render);
+
+                 //Render the scene
+				renderer.render(scene, camera);
+
+				
+            }
+            
+
+            /* Event handlers */
+
+            // Update camera projection on screen resize
+   //         window.addEventListener( 'resize', function () {
+			//	camera.aspect = window.innerWidth / window.innerHeight;
+			//	camera.updateProjectionMatrix();
+
+			//	renderer.setSize( window.innerWidth, window.innerHeight );
+			//});
+
+			////Different event listeners cos ondrag method written each time will rewrite the definition or update on it
+   //         document.addEventListener( 'dragover', function ( event ) {    
+   //             event.preventDefault();
+   //             event.dataTransfer.dropEffect = 'copy';
+   //         }, false );
+
+   //         // Provide visual feedback,using opacity, on drag enter
+   //         document.addEventListener( 'dragenter', function () {
+   //             document.body.style.opacity = 0.5;
+   //         }, false );
+
+   //         // Reset the body's opacity on drag leave
+   //         document.addEventListener( 'dragleave', function () {
+   //             document.body.style.opacity = 1;
+   //         }, false );
+
+   //         // Listen for file drop events
+   //         document.addEventListener( 'drop', function ( event ) {
+   //             event.preventDefault();
+
+   //             // Create a new file reader to load the iamge
+   //             var reader = new FileReader();
+   //             reader.addEventListener( 'load', function ( event ) {
+   //                 // Assign the new image as the material's texture
+   //                 // and mark the material for update
+   //                 material.map.image.src = event.target.result;
+   //                 material.map.needsUpdate = true;
+   //             }, false );
+            
+   //         // Read the image loaded into memory
+   //         reader.readAsDataURL( event.dataTransfer.files[ 0 ] );
+
+   //         // Reset the body's opacity
+   //         document.body.style.opacity = 1;
+
+   //         }, false );
+
+   //         // On mouse down, update temporary variables storing camera position
+   //         // This will let us update the camera target in relation to mouse movement
+   //         document.addEventListener( 'mousedown', function ( event ) {
+   //             isUserInteracting = true;
+                
+			//	var clientX = event.clientX || event.touches[ 0 ].clientX;
+			//	var clientY = event.clientY || event.touches[ 0 ].clientY;
+                
+			//	onMouseDownMouseX = clientX;
+			//	onMouseDownMouseY = clientY;
+                
+			//	onMouseDownLon = lon;
+			//	onMouseDownLat = lat;
+			//});
+            
+   //         // Update camera parameters
+   //         document.addEventListener( 'mousemove', function ( event ) {
+   //             if ( isUserInteracting === true ) {
+   //                 var clientX = event.clientX || event.touches[ 0 ].clientX;
+			//		var clientY = event.clientY || event.touches[ 0 ].clientY;
+                    
+			//		lon = ( onMouseDownMouseX - clientX ) * 0.1 + onMouseDownLon;
+			//		lat = ( clientY - onMouseDownMouseY ) * 0.1 + onMouseDownLat;
+			//	}
+			//});
+            
+   //         // Done with interaction, can keep rotation camera
+   //         document.addEventListener( 'mouseup', function () {
+			//	isUserInteracting = false;
+   //         });
+            
+			//document.addEventListener( 'wheel', function ( event ) {
+   //             var fov = camera.fov + event.deltaY * 0.05;
+   //             camera.fov = THREE.Math.clamp( fov, 10, 75 );
+   //             camera.updateProjectionMatrix();
+   //         });
+			
+
+		</script>
+	</body>
+</html>
