@@ -1,0 +1,295 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Introduction to Three.js - Raycasting</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+			
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/108/three.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/three-trackballcontrols-web@0.0.2/dist/three-trackballcontrols.js"></script>
+		<script src="https://unpkg.com/tone"></script>
+
+		<style>
+			body {
+				overflow	: hidden;
+				padding		: 0;
+				margin		: 0;
+
+				color		: #222;
+				background  : black;
+				font-family	: monospace;
+				font-size	: 100%;
+			}
+			#info .top {
+				position	: absolute;
+				top		: 0px;
+				width		: 100%;
+				padding		: 5px;
+				text-align	: center;
+			}
+			#info a {
+				color		: #66F;
+				text-decoration	: none;
+			}
+			#info a:hover {
+				text-decoration	: underline;
+			}
+			#info .bottom {
+				position	: absolute;
+				bottom		: 0px;
+				right		: 5px;
+				padding		: 5px;
+			}
+		</style>
+	</head>
+<body>
+	<!-- three.js container -->
+			<div id="container"></div>
+			<div id="info">
+				<p class="top"><font color='white'>
+				TRAVEL THROUGH MUSIC </br>
+					Click on a note or tile to make music.</font>
+					<button onclick="enableAudio()">Start Audio</button>
+				</p>
+			</div>
+	<!-- info on screen display -->
+
+	<script type="text/javascript">
+		/*
+			Three.js Setup
+		*/
+
+		var stats, scene, renderer;
+        var camera, shouldRaycast=true;
+
+        var cameraTarget = new THREE.Vector3(0,0,0);
+        var raycaster = new THREE.Raycaster();
+		var mouse = new THREE.Vector2();
+		var currentMesh;
+
+		var mouseX = 0, mouseY = 0;
+		var windowHalfX = window.innerWidth / 2;
+		var windowHalfY = window.innerHeight / 2;
+
+		var tilew=5;
+
+		document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+ 
+		/*
+			Tone.js Setup
+		*/
+
+		const lownotes = ['D3','C4', 'D4', 'E4', 'F4', 'G4', 'A4']
+		const highnotes=['A6','C6', 'D6', 'E6', 'F6', 'G6','A6']
+		
+
+		// Define two synths for drums and notes
+		const drumSynth = new Tone.MembraneSynth({"decay":5.5}).toMaster()
+		const drumSynth2 = new Tone.MembraneSynth({"decay":5.5}).toMaster()
+		
+		const noteSynth = new Tone.Synth().toMaster()
+		
+
+        //create a loop
+		const loop = new Tone.Loop(function(time){
+			// Play drum synth
+			drumSynth.triggerAttackRelease("C3", "2n", time)
+			
+			// Change color of Three.js spheres
+			scene.traverse(function(object3d, i) {
+				// Check if the current object is a THREE.Mesh (rather than a light, camera, etc.)
+				if( object3d instanceof THREE.Mesh === false )	return;
+
+				object3d.scale.set(1.2,1.2,1.2)
+			})
+
+        }, "2n")
+		const loop2 = new Tone.Loop(function(time){
+			drumSynth2.triggerAttackRelease("C1", "8n", time)
+		},"8n")
+
+		// Start the loop
+		loop.start(0);
+		loop2.start(0);
+
+		// Start the Tone.js transport (like hitting play)
+		Tone.Transport.start()
+
+		// Bootstrap the animation
+		init();
+		animate();
+
+		// init the scene
+		function init(){
+			renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			
+			//stats = new Stats();
+			//document.body.appendChild( stats.dom );
+
+
+			// Append the renderer's <canvas> element to the screen
+			document.getElementById('container').appendChild(renderer.domElement);
+
+			// Resize canvas when the screen resizes
+			document.addEventListener('resize', function() {
+				camera.aspect = width / height;
+				camera.updateProjectionMatrix();
+				renderer.setSize(width, height);
+			}, false);
+
+			// create the root scene
+			scene = new THREE.Scene();
+
+			/* Camera */ 
+			camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 15000 );
+			camera.position.z = 3200; 
+			scene.add(camera);
+
+			/* Lights */
+			var light1	= new THREE.AmbientLight( Math.random() * 0xffffff );
+			scene.add( light1 );
+
+			var light2	= new THREE.DirectionalLight( Math.random() * 0xffffff );
+			light2.position.set( Math.random(), Math.random(), Math.random() ).normalize().multiplyScalar(3);
+			light2.lookAt(cameraTarget); 
+			scene.add( light2 );
+
+			var light3	= new THREE.DirectionalLight( Math.random() * 0xffffff );
+			light3.position.set( Math.random(), Math.random(), Math.random() ).normalize().multiplyScalar(3);
+			light3.lookAt(cameraTarget); 
+			scene.add(light3);
+						
+			
+
+			
+			//Tiles
+			var geometry, material, mesh, randomPoint;
+			var numCubes = 7;
+            var cubes = [];
+
+			for (let i = 0; i < numCubes; i++) {
+			geometry = new THREE.BoxGeometry( 50, 20, 80 );
+			material = new THREE.MeshPhongMaterial({color:  0x00ffff});
+			material.flatShading = true;
+			
+			tile	= new THREE.Mesh( geometry, material );
+			tile.position.set(-300+(i*100), -150, 2500);
+			tile.rotation.set(Math.PI/2, 100, Math.PI/2);
+			
+			tile.name='tile';
+			
+			tile.note = lownotes[i];
+			
+			scene.add(tile);
+			cubes.push(tile);
+			
+			}
+			
+		}
+
+		function onDocumentMouseMove( event ) {
+				mouseX = ( event.clientX - windowHalfX ) * 10;
+				mouseY = ( event.clientY - windowHalfY ) * 10;
+			}
+
+		
+		function animate() { 
+			requestAnimationFrame( animate );
+			render();
+			
+
+			/* Geometry */ 
+			//music notes
+			
+			var geometry = new THREE.BoxBufferGeometry( tilew, 20, 20, 120 );//0,10,200,120
+			var texture = new THREE.TextureLoader().load( 'data:image/png;base64,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' );
+
+				var material = new THREE.MeshBasicMaterial({map: texture});
+				for ( var i = 0; i < 6; i ++ ) {
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.position.x = Math.random() * 4000 - 2000;
+					mesh.position.y = Math.random() * 4000 - 2000;
+					mesh.position.z *= Math.random() * 4000 - 2000;
+					mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
+					mesh.note = highnotes[(i%5)];//assigning 5 notes to all meshes on top
+					scene.add( mesh );
+				}
+			
+			//stats.update();
+		}
+
+		
+		function render() {
+
+			var time = Date.now() * 0.0005;
+
+			for ( var i = 1, l = scene.children.length; i < l; i ++ ) {
+					scene.children[ i ].lookAt( scene.position );
+				}
+			
+			camera.lookAt( scene.position );
+            /* Raycasting */
+            
+            var hits = [];
+			
+            if(shouldRaycast) { 
+                
+                raycaster.setFromCamera(mouse, camera);
+				
+				{
+                var intersections = raycaster.intersectObjects(scene.children);
+                hits = intersections.map(intersection => intersection.object)
+				}
+            }
+
+			renderer.render( scene, camera );
+
+			scene.traverse(function(object3d, i) {
+				
+				if( object3d instanceof THREE.Mesh === false )	return
+
+				//zoom
+				if(object3d.name!='tile')
+                {object3d.position.z=object3d.position.z+10;}
+                
+                if(hits.includes(object3d)) {
+					if(object3d.name=='tile')
+					{object3d.scale.set(1.2,0.8,1.2)
+					}
+					else
+					{object3d.scale.set(3,3,3)}
+					
+					if(object3d !== currentMesh)
+						noteSynth.triggerAttackRelease(object3d.note, "8n")
+
+					currentMesh = object3d
+				}
+                else 
+                    object3d.scale.set(1,1,1)
+					
+				
+            })
+        }
+        
+        window.addEventListener('pointermove', function (event) {
+            
+            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+			shouldRaycast = true;
+        })
+
+        window.addEventListener('pointerdown', function (event) {
+           
+        })
+
+        window.addEventListener('pointerup', function (event) {
+           
+        })
+
+
+	</script>
+</body>
+</html>
